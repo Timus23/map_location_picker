@@ -69,7 +69,7 @@ class _MyAppState extends State<MyApp> {
                       return MapLocationPicker(
                         canPopOnNextButtonTaped: true,
                         currentLatLng: const LatLng(27.7172, 85.3240),
-                        onNext: (Placemark? result) {
+                        onNext: (LatLng? latLng, Placemark? result) {
                           setState(() {
                             address = result?.formatedStreet ?? "";
                           });

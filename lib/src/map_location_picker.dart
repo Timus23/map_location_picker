@@ -36,7 +36,7 @@ class MapLocationPicker extends StatefulWidget {
   final Color? bottomCardColor;
 
   /// On Next Page callback
-  final Function(Placemark?) onNext;
+  final Function(LatLng?, Placemark?) onNext;
 
   /// Show back button (default: true)
   final bool showBackButton;
@@ -133,6 +133,9 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
   // Placemark
   Placemark? _selectedPlace;
 
+  // Selected LatLng
+  LatLng? _selectedLatLng;
+
   //List of place mark
   List<Placemark> _allPlacemarks = [];
 
@@ -166,6 +169,7 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
       }
       _address = geocoding.first.formatedStreet;
       _selectedPlace = geocoding.first;
+      _selectedLatLng = location;
       setState(() {
         _allPlacemarks = geocoding.fold(
           [],
@@ -294,7 +298,7 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
                           color: widget.primaryColor ?? _theme.primaryColor,
                         ),
                         onPressed: () async {
-                          widget.onNext.call(_selectedPlace);
+                          widget.onNext.call(_selectedLatLng, _selectedPlace);
                           if (widget.canPopOnNextButtonTaped) {
                             Navigator.pop(context);
                           }
