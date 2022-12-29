@@ -33,19 +33,6 @@ class _MyAppState extends State<MyApp> {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          PlacesAutocomplete(
-            searchController: _controller,
-            apiKey: "YOUR_API_KEY_HERE",
-            mounted: mounted,
-            showBackButton: false,
-            onGetDetailsByPlaceId: (PlacesDetailsResponse? result) {
-              if (result != null) {
-                setState(() {
-                  autocompletePlace = result.result.formattedAddress ?? "";
-                });
-              }
-            },
-          ),
           const Spacer(),
           const Padding(
             padding: EdgeInsets.all(8.0),
@@ -80,23 +67,12 @@ class _MyAppState extends State<MyApp> {
                   MaterialPageRoute(
                     builder: (context) {
                       return MapLocationPicker(
-                        apiKey: "YOUR_API_KEY_HERE",
                         canPopOnNextButtonTaped: true,
-                        currentLatLng: const LatLng(29.121599, 76.396698),
-                        onNext: (GeocodingResult? result) {
-                          if (result != null) {
-                            setState(() {
-                              address = result.formattedAddress ?? "";
-                            });
-                          }
-                        },
-                        onSuggestionSelected: (PlacesDetailsResponse? result) {
-                          if (result != null) {
-                            setState(() {
-                              autocompletePlace =
-                                  result.result.formattedAddress ?? "";
-                            });
-                          }
+                        currentLatLng: const LatLng(27.7172, 85.3240),
+                        onNext: (Placemark? result) {
+                          setState(() {
+                            address = result?.formatedStreet ?? "";
+                          });
                         },
                       );
                     },
