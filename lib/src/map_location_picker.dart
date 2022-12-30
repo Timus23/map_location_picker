@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:map_location_picker/map_location_picker.dart';
+import 'package:map_location_picker/src/auto_complete_text_field.dart';
 import 'logger.dart';
 
 class MapLocationPicker extends StatefulWidget {
@@ -36,7 +37,7 @@ class MapLocationPicker extends StatefulWidget {
   final Color? bottomCardColor;
 
   /// On Next Page callback
-  final Function(LatLng?, Placemark?) onNext;
+  final Function(Place) onNext;
 
   /// Show back button (default: true)
   final bool showBackButton;
@@ -57,17 +58,9 @@ class MapLocationPicker extends StatefulWidget {
   /// offset: int,
   final num? offset;
 
-  /// Origin location for calculating distance from results
-  /// origin: Location(lat: -33.852, lng: 151.211),
-  final Location? origin;
-
   /// currentLatLng init location for camera position
   /// currentLatLng: Location(lat: -33.852, lng: 151.211),
   final LatLng? currentLatLng;
-
-  /// Location bounds for restricting results to a radius around a location
-  /// location: Location(lat: -33.867, lng: 151.195)
-  final Location? location;
 
   /// Radius for restricting results to a radius around a location
   /// radius: Radius in meters
@@ -105,8 +98,6 @@ class MapLocationPicker extends StatefulWidget {
     this.showMoreOptions = true,
     this.dialogTitle = 'You can also use the following options',
     this.offset,
-    this.origin,
-    this.location,
     this.radius,
     this.strictbounds = false,
     this.searchController,
@@ -131,13 +122,7 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
   double _zoom = 18.0;
 
   // Placemark
-  Placemark? _selectedPlace;
-
-  // Selected LatLng
-  LatLng? _selectedLatLng;
-
-  //List of place mark
-  List<Placemark> _allPlacemarks = [];
+  Place? _selectedPlace;
 
   /// Camera position moved to location
   CameraPosition cameraPosition() {
@@ -153,34 +138,13 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
   /// Decode address from latitude & longitude
   void _decodeAddress(LatLng location) async {
     try {
-      final geocoding =
-          await placemarkFromCoordinates(location.latitude, location.longitude);
-
-      /// When get any error from the API, show the error in the console.
-      if (geocoding.isEmpty) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Address not found, something went wrong!"),
-            ),
-          );
-        }
-        return;
-      }
-      _address = geocoding.first.formatedStreet;
-      _selectedPlace = geocoding.first;
-      _selectedLatLng = location;
+      final res = await Nominatim.reverseSearch(
+        lat: location.latitude,
+        lon: location.longitude,
+      );
       setState(() {
-        _allPlacemarks = geocoding.fold(
-          [],
-          (pv, e) => [
-            ...pv,
-            if (pv.indexWhere(
-                    (val) => val.formatedStreet == e.formatedStreet) ==
-                -1)
-              e
-          ],
-        );
+        _selectedPlace = res;
+        _address = res.displayName;
       });
     } catch (e) {
       logger.e(e);
@@ -196,7 +160,7 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
 
   @override
   Widget build(BuildContext context) {
-    final _theme = Theme.of(context);
+    final theme = Theme.of(context);
     return Scaffold(
       body: Stack(
         children: [
@@ -241,18 +205,16 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
             mainAxisAlignment: MainAxisAlignment.end,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              AppBar(
-                backgroundColor: Colors.transparent,
-                elevation: 0,
-                leading: IconButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  icon: Icon(
-                    Icons.arrow_back_ios_new_rounded,
-                    color: widget.primaryColor ?? _theme.primaryColor,
-                  ),
-                ),
+              AutoCompleteTextField(
+                onSelected: (osmPlace) async {
+                  LatLng latLng = LatLng(osmPlace.lat, osmPlace.lng);
+                  _initialPosition = latLng;
+                  final controller = await _controller.future;
+                  controller.animateCamera(
+                      CameraUpdate.newCameraPosition(cameraPosition()));
+                  _decodeAddress(latLng);
+                  setState(() {});
+                },
               ),
               const Spacer(),
               Padding(
@@ -274,13 +236,14 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
                       final controller = await _controller.future;
                       controller.animateCamera(
                           CameraUpdate.newCameraPosition(cameraPosition()));
-                      _decodeAddress(
-                        LatLng(position.latitude, position.longitude),
-                      );
+                      _decodeAddress(latLng);
                       setState(() {});
                     }
                   },
-                  child: const Icon(Icons.my_location),
+                  child: const Icon(
+                    Icons.my_location,
+                    color: Colors.white,
+                  ),
                 ),
               ),
               Card(
@@ -295,105 +258,24 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
                       trailing: IconButton(
                         icon: Icon(
                           Icons.send,
-                          color: widget.primaryColor ?? _theme.primaryColor,
+                          color: widget.primaryColor ?? theme.primaryColor,
                         ),
                         onPressed: () async {
-                          widget.onNext.call(_selectedLatLng, _selectedPlace);
-                          if (widget.canPopOnNextButtonTaped) {
-                            Navigator.pop(context);
+                          if (_selectedPlace != null) {
+                            widget.onNext.call(_selectedPlace!);
+                            if (widget.canPopOnNextButtonTaped) {
+                              Navigator.pop(context);
+                            }
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Please select your location"),
+                              ),
+                            );
                           }
                         },
                       ),
                     ),
-                    if (widget.showMoreOptions && _allPlacemarks.length > 1)
-                      GestureDetector(
-                        onTap: () {
-                          showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              titlePadding: EdgeInsets.zero,
-                              title: Stack(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.only(
-                                        left: 16, top: 16),
-                                    child: Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            widget.dialogTitle,
-                                            style: _theme.textTheme.bodyLarge!
-                                                .copyWith(fontSize: 16),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 50)
-                                      ],
-                                    ),
-                                  ),
-                                  Positioned(
-                                    right: 0,
-                                    top: 0,
-                                    child: IconButton(
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                      },
-                                      icon: const Icon(Icons.close_outlined),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 20),
-                              scrollable: true,
-                              content: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: _allPlacemarks.map((e) {
-                                  return Container(
-                                    margin:
-                                        const EdgeInsets.symmetric(vertical: 4),
-                                    child: InkWell(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xAADFDFDF),
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                        ),
-                                        alignment: Alignment.centerLeft,
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 8,
-                                          horizontal: 12,
-                                        ),
-                                        child: Text(
-                                          e.formatedStreet,
-                                          maxLines: 2,
-                                        ),
-                                      ),
-                                      onTap: () {
-                                        _address = e.formatedStreet;
-                                        _selectedPlace = e;
-                                        setState(() {});
-                                        Navigator.pop(context);
-                                      },
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                            ),
-                          );
-                        },
-                        child: Chip(
-                          backgroundColor:
-                              widget.primaryColor?.withOpacity(0.8) ??
-                                  _theme.primaryColor.withOpacity(0.8),
-                          label: Text(
-                            "Tap to show ${(_allPlacemarks.length - 1)} more result options",
-                            style: _theme.textTheme.caption!.copyWith(
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
                   ],
                 ),
               ),

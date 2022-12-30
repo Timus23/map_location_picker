@@ -20,9 +20,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   String address = "null";
-  String autocompletePlace = "null";
 
-  final TextEditingController _controller = TextEditingController();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -69,9 +67,9 @@ class _MyAppState extends State<MyApp> {
                       return MapLocationPicker(
                         canPopOnNextButtonTaped: true,
                         currentLatLng: const LatLng(27.7172, 85.3240),
-                        onNext: (LatLng? latLng, Placemark? result) {
+                        onNext: (Place place) {
                           setState(() {
-                            address = result?.formatedStreet ?? "";
+                            address = place.displayName;
                           });
                         },
                       );
@@ -84,9 +82,6 @@ class _MyAppState extends State<MyApp> {
           const Spacer(),
           ListTile(
             title: Text("Geocoded Address: $address"),
-          ),
-          ListTile(
-            title: Text("Autocomplete Address: $autocompletePlace"),
           ),
           const Spacer(
             flex: 3,

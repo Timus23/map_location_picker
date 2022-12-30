@@ -13,8 +13,10 @@ dependencies:
 
   google_maps_flutter: ^2.2.0
   geolocator: ^9.0.1
-  geocoding: ^2.0.5
+  osm_nominatim: ^2.0.1
   logger: ^1.1.0
+  dio: ^4.0.6
+  form_builder_extra_fields: ^8.3.0
 
 dev_dependencies:
   flutter_test:
