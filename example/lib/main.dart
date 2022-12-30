@@ -35,7 +35,7 @@ class _MyAppState extends State<MyApp> {
           const Padding(
             padding: EdgeInsets.all(8.0),
             child: Text(
-              "Google Map Location Picker\nMade By Arvind 😃 with Flutter 🚀",
+              "Google Map Location Picker 🚀",
               textAlign: TextAlign.center,
               textScaleFactor: 1.2,
               style: TextStyle(
