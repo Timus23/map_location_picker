@@ -11,12 +11,12 @@ dependencies:
   flutter:
     sdk: flutter
 
-  google_maps_flutter: ^2.2.0
-  geolocator: ^9.0.1
+  google_maps_flutter: ^2.2.6
+  geolocator: ^9.0.2
   osm_nominatim: ^2.0.1
   logger: ^1.1.0
   dio: ^4.0.6
-  form_builder_extra_fields: ^7.1.0
+  form_builder_extra_fields: ^10.0.0
 
 dev_dependencies:
   flutter_test:
