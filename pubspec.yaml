@@ -4,7 +4,7 @@ version: 1.0.2
 homepage: https://github.com/rvndsngwn/map_location_picker
 
 environment:
-  sdk: ">=2.16.0 <3.0.0"
+  sdk: ">=2.18.6 <3.0.0"
   flutter: ">=1.17.0"
 
 dependencies:
@@ -16,7 +16,7 @@ dependencies:
   osm_nominatim: ^2.0.1
   logger: ^1.1.0
   dio: ^4.0.6
-  form_builder_extra_fields: ^10.0.0
+  form_builder_extra_fields: 8.5.0
 
 dev_dependencies:
   flutter_test:
